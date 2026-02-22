@@ -1,13 +1,13 @@
 CC=g++
 CXXFLAGS=-Wall -Wpedantic
 CXXVERSION=-std=c++17
-INCFLAGS=-lncurses
+INCFLAGS=-lncurses -lpanel
 TARGET=main.a
 
 .PHONY: all
 all: $(TARGET)
 
-$(TARGET): main.cxx
+$(TARGET): main.cxx 
 	$(CC) $(CXXFLAGS) $(CXXVERSION) $^ -o $(TARGET) $(INCFLAGS)
 
 .PHONY: clean

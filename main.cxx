@@ -1,30 +1,59 @@
 #include <iostream>
 #include <ncurses.h>
+#include <panel.h>
 
-// so what do I want to do
-// bottom line like vim, 
-// - zoom
-// - add new equation
-// - delete equation
-// - regraph/update view
-// - point following a specific function
+#define NUM_PANELS (3)
 
-int main(void) {
-  initscr();
-  raw(); // disable line buffering;
-  keypad(stdscr, TRUE); // include function key inputs
+//https://tldp.org/HOWTO/NCURSES-Programming-HOWTO/panels.html#PANELSHOWHIDE
+
+WINDOW* initializeNcurses(){
+  WINDOW* standardScreen = initscr();
+  if (standardScreen == NULL) {
+    std::cerr << "ERROR: Couldn't initialize ncurses" << std::endl;
+    exit(1);
+  }
+  raw();                                // disable line buffering
+  keypad(standardScreen, TRUE);         // include function key input
   noecho();
   refresh();
-  printw("Type a char:\n");
-  int ch = getch();
-  printw("The pressed key in bold is: ");
-  attron(A_BOLD);
-  printw("%c", ch);
-  attroff(A_BOLD);
-  printw("\nHit <f1> to finish.\n");
-  while((ch = getch()) != KEY_F(1)){
-    //infinite loop to close on F1 press
+  return standardScreen;
+}
+
+
+int main(void) {
+  PANEL* panels[NUM_PANELS];
+  WINDOW* win_s[NUM_PANELS];
+  int velocities[NUM_PANELS*2]= {1, 1, 2, 3, 6, -1};
+
+  initializeNcurses();
+
+  int lines=10, cols=40, x=4, y=2, i=0;
+
+  for(i = 0; i < NUM_PANELS; i++) {
+    win_s[i] = newwin(lines, cols, y+i, x+i*5);
+    box(win_s[i], 0, 0);
+    panels[i] = new_panel(win_s[i]);
   }
+  refresh();
+  update_panels();
+  doupdate();
+
+  int ch;
+  while((ch = getch()) != 'a'){
+    for(i = 0; i< NUM_PANELS; i++){
+      getbegyx(win_s[i], y, x);
+      wclear(win_s[i]);
+      wrefresh(win_s[i]);
+      mvwin(win_s[i], y+1, x+1);
+      box(win_s[i], 0, 0);
+      wrefresh(win_s[i]);
+      refresh();
+      update_panels();
+    }
+    doupdate();
+  }
+  getch();
+
   endwin();
   return 0;
 }
