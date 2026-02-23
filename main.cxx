@@ -1,59 +1,57 @@
-#include <iostream>
 #include <ncurses.h>
-#include <panel.h>
+#include <string>
 
-#define NUM_PANELS (3)
-
-//https://tldp.org/HOWTO/NCURSES-Programming-HOWTO/panels.html#PANELSHOWHIDE
-
-WINDOW* initializeNcurses(){
-  WINDOW* standardScreen = initscr();
-  if (standardScreen == NULL) {
-    std::cerr << "ERROR: Couldn't initialize ncurses" << std::endl;
-    exit(1);
-  }
-  raw();                                // disable line buffering
-  keypad(standardScreen, TRUE);         // include function key input
-  noecho();
-  refresh();
-  return standardScreen;
-}
-
+void redraw(int rows, int columns, std::string input);
 
 int main(void) {
-  PANEL* panels[NUM_PANELS];
-  WINDOW* win_s[NUM_PANELS];
-  int velocities[NUM_PANELS*2]= {1, 1, 2, 3, 6, -1};
+  initscr();
+  start_color();
+  cbreak();
+  keypad(stdscr, TRUE);
+  noecho();
+  init_pair(1, COLOR_BLACK, COLOR_WHITE);
+  
 
-  initializeNcurses();
-
-  int lines=10, cols=40, x=4, y=2, i=0;
-
-  for(i = 0; i < NUM_PANELS; i++) {
-    win_s[i] = newwin(lines, cols, y+i, x+i*5);
-    box(win_s[i], 0, 0);
-    panels[i] = new_panel(win_s[i]);
-  }
+  attron(COLOR_PAIR(1));
+  printw("Press F1 to exit");
   refresh();
-  update_panels();
-  doupdate();
+  attroff(COLOR_PAIR(1));
 
-  int ch;
-  while((ch = getch()) != 'a'){
-    for(i = 0; i< NUM_PANELS; i++){
-      getbegyx(win_s[i], y, x);
-      wclear(win_s[i]);
-      wrefresh(win_s[i]);
-      mvwin(win_s[i], y+1, x+1);
-      box(win_s[i], 0, 0);
-      wrefresh(win_s[i]);
-      refresh();
-      update_panels();
+  std::string input;
+  int ch, y, x, old_y, old_x;
+  while((ch = getch()) != KEY_F(1)) {
+    getmaxyx(stdscr, y, x);
+    if(old_y != y || old_x != x) { // check for resize and redraw if true
+      old_y = y;
+      old_x = x;
+      clear();
     }
-    doupdate();
+    if(ch == '\n') {
+      input.clear();
+      // clearing input for now, but could process it instead
+    } else if (ch == KEY_BACKSPACE) {
+      input.pop_back();
+    } else if (isascii(ch)) {
+      if(isprint(ch)) {
+        input += ch;
+      } else {
+        // non-printable control character like backspace or something
+      }
+    } else {
+      // not an ascii character as input
+    }
+    redraw(y, x, input);
   }
-  getch();
-
   endwin();
   return 0;
+}
+
+void redraw(int rows, int columns, std::string input){
+  attron(COLOR_PAIR(1));
+  move(rows-2, 0);
+  printw(input.c_str());
+  for(int i = input.length(); i < columns-1; i++){
+    printw(" ");
+  }
+  attroff(COLOR_PAIR(1));
 }
